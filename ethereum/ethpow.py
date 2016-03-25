@@ -40,7 +40,11 @@ cache_by_seed.max_items = 10
 
 def get_cache(block_number):
     while len(cache_seeds) <= block_number // EPOCH_LENGTH:
-        cache_seeds.append(sha3.sha3_256(cache_seeds[-1]).digest())
+        sval = cache_seeds[-1]
+        if type(sval) == str:
+            sval = sval.encode()
+
+        cache_seeds.append(sha3.sha3_256(sval).digest())
     seed = cache_seeds[block_number // EPOCH_LENGTH]
     if seed in cache_by_seed:
         c = cache_by_seed.pop(seed)  # pop and append at end
@@ -69,9 +73,9 @@ def check_pow(block_number, header_hash, mixhash, nonce, difficulty):
     # Grab current cache
     cache = get_cache(block_number)
     mining_output = hashimoto_light(block_number, cache, header_hash, nonce)
-    if mining_output['mix digest'] != mixhash:
+    if mining_output[b'mix digest'] != mixhash:
         return False
-    return utils.big_endian_to_int(mining_output['result']) <= 2**256 / (difficulty or 1)
+    return utils.big_endian_to_int(mining_output[b'result']) <= 2**256 / (difficulty or 1)
 
 
 class Miner():
